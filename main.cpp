@@ -169,6 +169,67 @@ void insertionSort(vector<int>& values, SortStats& stats) {
     }
 }
 
+void shellSort(vector<int>& arr, SortStats& stats) {
+    int n = arr.size();
+
+    for (int salto = n / 2; salto > 0; salto /= 2) {
+        for (int i = salto; i < n; i++) {
+            int chave = arr[i];
+            int j = i;
+
+            while (j >= salto) {
+                stats.comparisons++;
+
+                if (arr[j - salto] > chave) {
+                    arr[j] = arr[j - salto];
+                    stats.swaps++;
+                    j -= salto;
+                } else {
+                    break;
+                }
+            }
+
+            arr[j] = chave;
+        }
+    }
+}
+
+int partition(vector<int>& arr, int low, int high, SortStats& stats) {
+    int pivot = arr[high]; // pivô (último elemento)
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        stats.comparisons++;
+
+        if (arr[j] < pivot) {
+            i++;
+
+            // troca arr[i] e arr[j]
+            swap(arr[i], arr[j]);
+            stats.swaps++;
+        }
+    }
+
+    // coloca o pivô na posição correta
+    swap(arr[i + 1], arr[high]);
+    stats.swaps++;
+
+    return i + 1;
+}
+
+void quickSortRec(vector<int>& arr, int low, int high, SortStats& stats) {
+    if (low < high) {
+        int pi = partition(arr, low, high, stats);
+
+        quickSortRec(arr, low, pi - 1, stats);
+        quickSortRec(arr, pi + 1, high, stats);
+    }
+}
+
+void quickSort(vector<int>& arr, SortStats& stats) {
+    quickSortRec(arr, 0, arr.size() - 1, stats);
+}
+
 typedef void (*SortFunction)(vector<int>&, SortStats&);
 
 struct AlgorithmEntry {
@@ -254,9 +315,11 @@ int main() {
     AlgorithmEntry algorithms[] = {
         {"Bubble Sort", bubbleSort},
         {"Selection Sort", selectionSort},
-        {"Insertion Sort", insertionSort}
+        {"Insertion Sort", insertionSort},
+        {"Shell Sort", shellSort},
+        {"Quick Sort", quickSort}
     };
-    const int algorithmCount = 3;
+    const int algorithmCount = 5;
 
     ofstream outputFile("benchmark_results.txt");
     if (!outputFile.is_open()) {
