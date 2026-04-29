@@ -230,6 +230,151 @@ void quickSort(vector<int>& arr, SortStats& stats) {
     quickSortRec(arr, 0, arr.size() - 1, stats);
 }
 
+void heapify(vector<int>& arr, int n, int i, SortStats& stats) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+
+    // filho esquerdo
+    if (left < n) {
+        stats.comparisons++;
+        if (arr[left] > arr[largest]) {
+            largest = left;
+        }
+    }
+
+    // filho direito
+    if (right < n) {
+        stats.comparisons++;
+        if (arr[right] > arr[largest]) {
+            largest = right;
+        }
+    }
+
+    // se o maior não for a raiz
+    if (largest != i) {
+        swap(arr[i], arr[largest]);
+        stats.swaps++;
+
+        heapify(arr, n, largest, stats);
+    }
+}
+
+void heapSort(vector<int>& arr, SortStats& stats) {
+    int n = arr.size();
+
+    // construir heap (max-heap)
+    for (int i = n / 2 - 1; i >= 0; i--) {
+        heapify(arr, n, i, stats);
+    }
+
+    // extrair elementos do heap
+    for (int i = n - 1; i > 0; i--) {
+        swap(arr[0], arr[i]);
+        stats.swaps++;
+
+        heapify(arr, i, 0, stats);
+    }
+}
+
+void merge(vector<int>& arr, int left, int mid, int right, SortStats& stats) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    vector<int> L(n1), R(n2);
+
+    for (int i = 0; i < n1; i++) {
+        L[i] = arr[left + i];
+        stats.swaps++;
+    }
+
+    for (int j = 0; j < n2; j++) {
+        R[j] = arr[mid + 1 + j];
+        stats.swaps++;
+    }
+
+    int i = 0, j = 0, k = left;
+
+    while (i < n1 && j < n2) {
+        stats.comparisons++;
+
+        if (L[i] <= R[j]) {
+            arr[k++] = L[i++];
+        } else {
+            arr[k++] = R[j++];
+        }
+        stats.swaps++;
+    }
+
+    while (i < n1) {
+        arr[k++] = L[i++];
+        stats.swaps++;
+    }
+
+    while (j < n2) {
+        arr[k++] = R[j++];
+        stats.swaps++;
+    }
+}
+
+void mergeSortRec(vector<int>& arr, int left, int right, SortStats& stats) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+
+        mergeSortRec(arr, left, mid, stats);
+        mergeSortRec(arr, mid + 1, right, stats);
+
+        merge(arr, left, mid, right, stats);
+    }
+}
+
+void mergeSort(vector<int>& arr, SortStats& stats) {
+    mergeSortRec(arr, 0, arr.size() - 1, stats);
+}
+
+int getMax(const vector<int>& arr) {
+    int mx = arr[0];
+    for (int i = 1; i < arr.size(); i++)
+        if (arr[i] > mx)
+            mx = arr[i];
+    return mx;
+}
+
+void countingSort(vector<int>& arr, int exp, SortStats& stats) {
+    int n = arr.size();
+    vector<int> output(n);
+    int count[10] = {0};
+
+    for (int i = 0; i < n; i++) {
+        count[(arr[i] / exp) % 10]++;
+        stats.swaps++;
+    }
+
+    for (int i = 1; i < 10; i++) {
+        count[i] += count[i - 1];
+    }
+
+    for (int i = n - 1; i >= 0; i--) {
+        int idx = (arr[i] / exp) % 10;
+        output[count[idx] - 1] = arr[i];
+        count[idx]--;
+        stats.swaps++;
+    }
+
+    for (int i = 0; i < n; i++) {
+        arr[i] = output[i];
+        stats.swaps++;
+    }
+}
+
+void radixSort(vector<int>& arr, SortStats& stats) {
+    int m = getMax(arr);
+
+    for (int exp = 1; m / exp > 0; exp *= 10) {
+        countingSort(arr, exp, stats);
+    }
+}
+
 typedef void (*SortFunction)(vector<int>&, SortStats&);
 
 struct AlgorithmEntry {
@@ -317,9 +462,12 @@ int main() {
         {"Selection Sort", selectionSort},
         {"Insertion Sort", insertionSort},
         {"Shell Sort", shellSort},
-        {"Quick Sort", quickSort}
+        {"Quick Sort", quickSort},
+        {"Merge Sort", mergeSort},
+        {"Radix Sort", radixSort},
+        {"Heap Sort", heapSort}
     };
-    const int algorithmCount = 5;
+    const int algorithmCount = 8;
 
     ofstream outputFile("benchmark_results.txt");
     if (!outputFile.is_open()) {
